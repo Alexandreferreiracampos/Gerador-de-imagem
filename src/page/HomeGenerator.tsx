@@ -1,33 +1,45 @@
 import axios from 'axios';
-import {View, Text,Image, TouchableOpacity, StyleSheet, Modal, StatusBar } from 'react-native';
+import {View, Text,Image, TouchableOpacity, StyleSheet, Modal, StatusBar, TextInput, FlatList } from 'react-native';
 import { useEffect, useState} from 'react';
 import ScreenModal from './component/Modal';
 
 export default function HomeGenerator(){
 
-    const [url, setUrl] = useState()
+    const [url, setUrl] = useState();
+    const [dataImg, setDataIma] = useState([]);
+    const [title, setTitle] = useState();
+    const [statusModal, setStatusModal] = useState(false);
 
     const gerarImagem = async () => {
+        setStatusModal(true);
         const instance = axios.create({
             baseURL: 'https://api.openai.com/v1/images/generations',
             timeout: 1000000,
             headers: { 
-                'Authorization': 'Bearer ' + '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',
+                'Authorization': 'Bearer ' + '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',
                 'Content-Type': 'application/json'
         
         }});
 
         await instance.post('',
         {
-            "prompt": "an astronaut playing basketball with cats in space, digital art",
-            "n": 1,
+            "prompt": title,
+            "n": 5,
             "size": "1024x1024"
         }).then(response => {
             if (response.status == 200) {
-                setUrl(response.data.data[0].url)
-                console.log(response.data.data[0])
-                
+                var ImgData = [];
+                for(var i = 0; i < response.data.data.length; i++){
+                    ImgData.push(response.data.data[i].url)
+                }
 
+                setUrl(response.data.data[0].url)
+                setDataIma(ImgData)
+
+                setStatusModal(false)     
+            }else{
+                setStatusModal(false);
+                console.log('falha')
             }
         })
 
@@ -37,15 +49,33 @@ export default function HomeGenerator(){
     return(
         
         <View style={styles.container}>
-            <ScreenModal statusModal={true}/>
+            <ScreenModal statusModal={statusModal}/>
             <StatusBar backgroundColor='rgb(243,243,243)' barStyle="dark-content" />
-            <TouchableOpacity onPress={()=>gerarImagem()} ><Text>Gerar</Text><Text>{url}</Text></TouchableOpacity>
-            <Image
-        style={styles.tinyLogo}
-        source={{
-          uri: url,
-        }}
-      />
+            <TextInput
+                                    style={styles.inputText}
+                                    value={title}
+                                    placeholder="Descrição"
+                                    placeholderTextColor="#000"
+                                    maxLength={100}
+                                    onChangeText={(text) => setTitle(text)}
+                                />
+            <TouchableOpacity onPress={()=>gerarImagem()} ><Text>Gerar</Text></TouchableOpacity>
+            <FlatList
+                 data={dataImg}
+                 renderItem={({ item }) =>
+                 
+                     <Image
+                       style={styles.tinyLogo}
+                       source={{
+                       uri: item,
+                       }}
+                        />
+                   }
+                   keyExtractor={item => item}
+                   horizontal={false}
+                   numColumns={1}
+              />
+            
 
         </View>
     )
@@ -59,7 +89,17 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
     },
     tinyLogo: {
-        width: 350,
-        height: 350,
+        margin:10,
+        width: 300,
+        height: 250,
       },
+      inputText: {
+        width: "90%",
+        height: 70,
+        backgroundColor: 'white',
+        margin: 8,
+        borderRadius: 10,
+        padding: 10,
+
+    }
   });
